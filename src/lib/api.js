@@ -1,8 +1,10 @@
 import axios from 'axios';
 import { supabase } from './supabase';
 
+const API_BASE = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api/v1';
+
 const api = axios.create({
-  baseURL: 'http://localhost:5000/api/v1',
+  baseURL: API_BASE,
 });
 
 // Add a request interceptor to inject the token natively from Supabase
