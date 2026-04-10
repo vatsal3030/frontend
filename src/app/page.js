@@ -1,18 +1,32 @@
 "use client";
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { UploadCloud, File, Loader2 } from 'lucide-react';
 import api from '@/lib/api';
-import Cookies from 'js-cookie';
+import { supabase } from '@/lib/supabase';
 import Link from 'next/link';
+import { Button } from '@/components/ui/button';
 
 export default function Home() {
   const [file, setFile] = useState(null);
   const [isDragging, setIsDragging] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [session, setSession] = useState(null);
   const router = useRouter();
-  
-  const token = Cookies.get('token');
+
+  useEffect(() => {
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      setSession(session);
+    });
+
+    const {
+      data: { subscription },
+    } = supabase.auth.onAuthStateChange((_event, session) => {
+      setSession(session);
+    });
+
+    return () => subscription.unsubscribe();
+  }, []);
 
   const onDragOver = useCallback((e) => {
     e.preventDefault();
@@ -37,7 +51,7 @@ export default function Home() {
 
   const handleUpload = async () => {
     if (!file) return;
-    if (!token) {
+    if (!session) {
       router.push('/login');
       return;
     }
@@ -59,26 +73,33 @@ export default function Home() {
   };
 
   return (
-    <div className="min-h-screen bg-slate-900 flex flex-col items-center justify-center p-4">
+    <div className="min-h-screen bg-brutal-bg flex flex-col items-center justify-center p-4">
       <div className="absolute top-4 right-4 flex space-x-4">
-        {token ? (
-          <Link href="/dashboard" className="px-4 py-2 bg-slate-800 text-slate-300 rounded-md hover:text-white transition">Dashboard</Link>
+        {session ? (
+          <Link href="/dashboard">
+             <Button variant="white" className="border-3 text-lg">Dashboard</Button>
+          </Link>
         ) : (
           <>
-            <Link href="/login" className="px-4 py-2 text-slate-300 hover:text-white transition">Sign In</Link>
-            <Link href="/register" className="px-4 py-2 bg-blue-600 hover:bg-blue-500 text-white font-medium rounded-md transition shadow-lg shadow-blue-500/30">Get Started</Link>
+            <Link href="/login">
+               <Button variant="outline" className="bg-white border-3 text-lg">Sign In</Button>
+            </Link>
+            <Link href="/register">
+               <Button variant="mint" className="text-lg">Get Started</Button>
+            </Link>
           </>
         )}
       </div>
 
-      <div className="text-center mb-10 max-w-2xl">
-        <div className="inline-block px-3 py-1 mb-4 rounded-full bg-blue-500/10 text-blue-400 text-sm font-semibold border border-blue-500/20">
+      <div className="text-center mb-10 max-w-3xl">
+        <div className="inline-block px-4 py-1.5 mb-6 border-3 border-black bg-brutal-yellow text-brutal-black font-black uppercase tracking-wider shadow-brutal-sm">
           Powered by Gemini 2.5 AI
         </div>
-        <h1 className="text-5xl font-bold mb-4 tracking-tight">
-          Recruiter-Level <span className="bg-gradient-to-r from-blue-400 to-emerald-400 bg-clip-text text-transparent">Resume Analysis</span>
+        <h1 className="text-6xl md:text-7xl font-black mb-6 tracking-tighter uppercase leading-none">
+          Recruiter-Level <br/>
+          <span className="bg-brutal-mint px-2 border-4 border-black relative inline-block shadow-brutal mt-2">Resume Analysis</span>
         </h1>
-        <p className="text-lg text-slate-400">
+        <p className="text-xl font-bold bg-white inline-block p-4 border-3 border-black shadow-[4px_4px_0_#000] max-w-2xl mt-4">
           Upload your resume and let our AI engine evaluate it, identify weaknesses, and provide an actionable improvement plan along with ATS scores.
         </p>
       </div>
@@ -87,7 +108,7 @@ export default function Home() {
         onDragOver={onDragOver}
         onDragLeave={onDragLeave}
         onDrop={onDrop}
-        className={`w-full max-w-xl p-12 transition-all duration-300 rounded-3xl border-2 border-dashed flex flex-col items-center justify-center text-center cursor-pointer ${isDragging ? 'border-blue-400 bg-blue-500/10 scale-102' : 'border-slate-700 bg-slate-800/50 hover:bg-slate-800 hover:border-slate-600'}`}
+        className={`w-full max-w-2xl p-12 transition-all duration-200 border-4 ${isDragging ? 'border-brutal-blue bg-brutal-blue/20 scale-105 shadow-none' : 'border-black bg-white shadow-brutal'} flex flex-col items-center justify-center text-center cursor-pointer`}
         onClick={() => document.getElementById('file-upload').click()}
       >
         <input 
@@ -100,40 +121,42 @@ export default function Home() {
         
         {file ? (
           <div className="flex flex-col items-center space-y-4">
-            <div className="w-16 h-16 rounded-full bg-emerald-500/20 flex items-center justify-center">
-              <File className="w-8 h-8 text-emerald-400" />
+            <div className="w-20 h-20 bg-brutal-mint border-4 border-black shadow-brutal flex items-center justify-center mb-4">
+              <File className="w-10 h-10 text-black" />
             </div>
-            <div>
-              <p className="font-medium text-slate-200">{file.name}</p>
-              <p className="text-sm text-slate-500">{(file.size / 1024 / 1024).toFixed(2)} MB</p>
+            <div className="bg-brutal-pink p-3 border-3 border-black font-bold text-lg inline-block">
+              <p>{file.name}</p>
+              <p className="text-sm opacity-80 mt-1">{(file.size / 1024 / 1024).toFixed(2)} MB</p>
             </div>
           </div>
         ) : (
           <>
-            <div className={`w-20 h-20 mb-6 rounded-full flex items-center justify-center ${isDragging ? 'bg-blue-500 text-white' : 'bg-slate-700 text-slate-400'} transition-colors`}>
-              <UploadCloud className="w-10 h-10" />
+            <div className={`w-24 h-24 mb-6 flex items-center justify-center border-4 border-black shadow-brutal transition-colors ${isDragging ? 'bg-brutal-blue text-white' : 'bg-brutal-yellow text-black'}`}>
+              <UploadCloud className="w-12 h-12" />
             </div>
-            <h3 className="text-xl font-semibold mb-2">Drag & Drop your resume</h3>
-            <p className="text-slate-400">or click to browse from your computer (PDF only)</p>
+            <h3 className="text-3xl font-black mb-2 uppercase">Drop your resume</h3>
+            <p className="font-bold text-lg opacity-80 bg-slate-100 px-3 py-1 border-2 border-black">or click to browse (PDF only)</p>
           </>
         )}
       </div>
 
       {file && (
-        <button 
-          onClick={handleUpload}
+        <Button 
+          onClick={(e) => { e.stopPropagation(); handleUpload(); }}
           disabled={loading}
-          className={`mt-8 flex items-center px-8 py-3 rounded-xl font-bold transition-all ${loading ? 'bg-slate-700 text-slate-400 cursor-not-allowed' : 'bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white shadow-[0_0_20px_rgba(79,70,229,0.4)] hover:scale-105'}`}
+          variant="default"
+          size="lg"
+          className={`mt-10 text-2xl py-8 px-12 border-4 ${loading ? 'opacity-50 pointer-events-none' : ''}`}
         >
           {loading ? (
             <>
-              <Loader2 className="w-5 h-5 animate-spin mr-2" />
-              Analyzing Resume...
+              <Loader2 className="w-8 h-8 animate-spin mr-3" />
+              ANALYZING...
             </>
           ) : (
-            'Analyze My Resume'
+            'START ANALYSIS'
           )}
-        </button>
+        </Button>
       )}
     </div>
   );
