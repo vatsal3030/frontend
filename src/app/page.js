@@ -11,6 +11,7 @@ export default function Home() {
   const [file, setFile] = useState(null);
   const [isDragging, setIsDragging] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [uploadError, setUploadError] = useState(null);
   const [session, setSession] = useState(null);
   const router = useRouter();
 
@@ -56,6 +57,7 @@ export default function Home() {
       return;
     }
     setLoading(true);
+    setUploadError(null);
     const formData = new FormData();
     formData.append('resume', file);
 
@@ -65,8 +67,9 @@ export default function Home() {
       });
       router.push(`/results/${res.data.id}`);
     } catch (err) {
-      console.error(err);
-      alert("Failed to analyze resume. Make sure Gemini API Key is set.");
+      console.error('Upload error:', err.response?.data || err.message);
+      const serverMsg = err.response?.data?.error || 'Failed to analyze resume. Check backend logs.';
+      setUploadError(serverMsg);
     } finally {
       setLoading(false);
     }
@@ -90,6 +93,13 @@ export default function Home() {
           </>
         )}
       </div>
+
+      {uploadError && (
+        <div className="absolute top-20 left-1/2 -translate-x-1/2 w-full max-w-xl z-50 p-4 border-4 border-brutal-black bg-red-400 text-brutal-black font-bold shadow-brutal text-center">
+          ❌ {uploadError}
+          <button onClick={() => setUploadError(null)} className="ml-4 underline font-black">Dismiss</button>
+        </div>
+      )}
 
       <div className="text-center mb-10 max-w-3xl">
         <div className="inline-block px-4 py-1.5 mb-6 border-3 border-black bg-brutal-yellow text-brutal-black font-black uppercase tracking-wider shadow-brutal-sm">

@@ -13,11 +13,19 @@ export default function RegisterPage() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState(null);
+  const [loading, setLoading] = useState(false);
   const router = useRouter();
 
+  // If already logged in, go to dashboard
   useEffect(() => {
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+    supabase.auth.getSession().then(({ data: { session } }) => {
       if (session) router.push('/dashboard');
+    });
+
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+      if (event === 'SIGNED_IN' && session) {
+        router.push('/dashboard');
+      }
     });
     return () => subscription.unsubscribe();
   }, [router]);
@@ -25,19 +33,42 @@ export default function RegisterPage() {
   const handleRegister = async (e) => {
     e.preventDefault();
     setError(null);
-    const { error } = await supabase.auth.signUp({
+    setLoading(true);
+
+    if (password.length < 6) {
+      setError('Password must be at least 6 characters.');
+      setLoading(false);
+      return;
+    }
+
+    const { data, error: authError } = await supabase.auth.signUp({
       email,
       password,
       options: { data: { full_name: name } }
     });
-    if (error) setError(error.message);
-    else setError('Registration successful. You can log in now!');
+
+    if (authError) {
+      setError(authError.message);
+      setLoading(false);
+      return;
+    }
+
+    // If Supabase returned a session (email confirmation disabled), go to dashboard
+    if (data?.session) {
+      router.push('/dashboard');
+      return;
+    }
+
+    // If no session returned, email confirmation is likely required
+    // Redirect to login with a success message
+    router.push('/login?message=' + encodeURIComponent('Registration successful! Check your email to confirm, then sign in.'));
   };
 
   const handleGoogleLogin = async () => {
     setError(null);
     const { error } = await supabase.auth.signInWithOAuth({ provider: 'google' });
     if (error) setError(error.message);
+    // Google OAuth redirects automatically on success
   };
 
   return (
@@ -51,7 +82,7 @@ export default function RegisterPage() {
           <CardContent className="space-y-6">
             
             {error && (
-              <div className={`p-3 border-3 border-brutal-black font-bold shadow-brutal-sm ${error.includes('successful') ? 'bg-brutal-blue' : 'bg-red-400'}`}>
+              <div className="p-3 border-3 border-brutal-black bg-red-400 text-brutal-black font-bold shadow-brutal-sm">
                 {error}
               </div>
             )}
@@ -75,18 +106,18 @@ export default function RegisterPage() {
             <form onSubmit={handleRegister} className="space-y-4">
               <div className="space-y-1">
                 <label className="block text-sm font-black">Full Name</label>
-                <Input type="text" required value={name} onChange={e => setName(e.target.value)} />
+                <Input type="text" required value={name} onChange={e => setName(e.target.value)} placeholder="John Doe" />
               </div>
               <div className="space-y-1">
                 <label className="block text-sm font-black">Email</label>
-                <Input type="email" required value={email} onChange={e => setEmail(e.target.value)} />
+                <Input type="email" required value={email} onChange={e => setEmail(e.target.value)} placeholder="you@example.com" />
               </div>
               <div className="space-y-1">
                 <label className="block text-sm font-black">Password</label>
-                <Input type="password" required value={password} onChange={e => setPassword(e.target.value)} />
+                <Input type="password" required value={password} onChange={e => setPassword(e.target.value)} placeholder="Min 6 characters" />
               </div>
-              <Button type="submit" variant="default" className="w-full text-lg mt-4">
-                Create Account
+              <Button type="submit" variant="default" className="w-full text-lg mt-4" disabled={loading}>
+                {loading ? 'Creating Account...' : 'Create Account'}
               </Button>
             </form>
 
