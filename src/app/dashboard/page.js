@@ -19,7 +19,12 @@ export default function Dashboard() {
         const { data } = await api.get('/resumes');
         setResumes(data);
       } catch (error) {
-        console.error("Error fetching resumes", error);
+        console.error("Error fetching resumes:", error.response?.data || error.message);
+        if (error.response?.status === 401) {
+           console.log("Authentication failed. Redirecting to login...");
+           await supabase.auth.signOut();
+           router.push('/login');
+        }
       } finally {
         setLoading(false);
       }

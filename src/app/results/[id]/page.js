@@ -204,12 +204,52 @@ export default function ResultsPage() {
           </div>
         </div>
       ) : (
-        <Card className="bg-white">
+        <Card className="bg-white relative">
           <CardContent className="pt-6 prose prose-lg prose-headings:font-black prose-a:text-blue-600 prose-p:font-medium max-w-none">
-            <div className="bg-brutal-blue border-3 border-black px-6 py-4 mb-8 flex items-start shadow-brutal-sm font-bold text-lg">
-              <Lightbulb className="w-8 h-8 mr-3 flex-shrink-0 bg-white rounded-full p-1 border-2 border-black" />
-              <p className="m-0">AI-generated recommendation to address weaknesses and restructure content for recruiters.</p>
+            <div className="bg-brutal-blue border-3 border-black px-6 py-4 mb-4 flex flex-col md:flex-row items-start justify-between shadow-brutal-sm">
+              <div className="flex items-start">
+                <Lightbulb className="w-8 h-8 mr-3 flex-shrink-0 bg-white rounded-full p-1 border-2 border-black" />
+                <p className="m-0 font-bold text-lg">AI-generated recommendation to address weaknesses and restructure content for recruiters.</p>
+              </div>
+              <div className="flex gap-2 mt-4 md:mt-0">
+                <Button 
+                  variant="white" 
+                  className="font-bold text-sm px-3 border-2"
+                  onClick={() => {
+                    const content = data.recommendedDoc || data.recommended_doc || "No recommendation available.";
+                    const blob = new Blob([content], { type: 'text/markdown' });
+                    downloadBlob(blob, `${data.candidateName || 'candidate'}_resume.md`);
+                  }}
+                >
+                  .MD
+                </Button>
+                <Button 
+                  variant="white" 
+                  className="font-bold text-sm px-3 border-2"
+                  onClick={() => {
+                    const content = data.recommendedDoc || data.recommended_doc || "No recommendation available.";
+                    const blob = new Blob([content], { type: 'text/plain' });
+                    downloadBlob(blob, `${data.candidateName || 'candidate'}_resume.txt`);
+                  }}
+                >
+                  .TXT
+                </Button>
+                <Button 
+                  variant="white" 
+                  className="font-bold text-sm px-3 border-2 bg-brutal-yellow"
+                  onClick={() => {
+                    const content = data.recommendedDoc || data.recommended_doc || "No recommendation available.";
+                    // Wrap the markdown structure inside a viable LaTeX template
+                    const latexContent = `\\documentclass{article}\n\\usepackage[utf8]{inputenc}\n\\usepackage{hyperref}\n\\begin{document}\n\n${content}\n\n\\end{document}`;
+                    const blob = new Blob([latexContent], { type: 'application/x-latex' });
+                    downloadBlob(blob, `${data.candidateName || 'candidate'}_resume.tex`);
+                  }}
+                >
+                  .TEX (LaTeX)
+                </Button>
+              </div>
             </div>
+            
             <div className="border-4 border-black p-8 bg-[#fdfdfd] shadow-brutal">
               <ReactMarkdown>{data.recommendedDoc || data.recommended_doc || "No recommendation available."}</ReactMarkdown>
             </div>
@@ -218,4 +258,16 @@ export default function ResultsPage() {
       )}
     </div>
   );
+}
+
+// Helper utility
+function downloadBlob(blob, filename) {
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = filename;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
 }

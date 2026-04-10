@@ -10,9 +10,17 @@ const api = axios.create({
 // Add a request interceptor to inject the token natively from Supabase
 api.interceptors.request.use(
   async (config) => {
-    const { data: { session } } = await supabase.auth.getSession();
+    const { data: { session }, error } = await supabase.auth.getSession();
+    
+    if (error) {
+      console.error("Supabase getSession Error:", error);
+    }
+    
     if (session?.access_token) {
+      console.log("Token found, injecting Authorization header...");
       config.headers['Authorization'] = `Bearer ${session.access_token}`;
+    } else {
+      console.error("Interceptor Failure: No active session found to inject!");
     }
     return config;
   },
