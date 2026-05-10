@@ -22,7 +22,12 @@ export default function ResultsPage() {
     const fetchResult = async () => {
       try {
         const res = await api.get(`/resumes/${id}`);
-        setData(res.data);
+        const doc = res.data;
+        // BUG FIX: The AI output (candidateName, summary, strengths, etc.)
+        // is stored inside `doc.content` (a JSON blob), not as flat fields.
+        // Merge content into the top-level object so the page can read them.
+        const content = doc.content || {};
+        setData({ ...doc, ...content, originalName: doc.title });
       } catch (err) {
         console.error(err);
         router.push('/dashboard');
@@ -208,7 +213,7 @@ export default function ResultsPage() {
           <CardContent className="pt-6 prose prose-lg prose-headings:font-black prose-a:text-blue-600 prose-p:font-medium max-w-none">
             <div className="bg-brutal-blue border-3 border-black px-6 py-4 mb-4 flex flex-col md:flex-row items-start justify-between shadow-brutal-sm">
               <div className="flex items-start">
-                <Lightbulb className="w-8 h-8 mr-3 flex-shrink-0 bg-white rounded-full p-1 border-2 border-black" />
+                <Lightbulb className="w-8 h-8 mr-3 shrink-0 bg-white rounded-full p-1 border-2 border-black" />
                 <p className="m-0 font-bold text-lg">AI-generated recommendation to address weaknesses and restructure content for recruiters.</p>
               </div>
               <div className="flex gap-2 mt-4 md:mt-0">

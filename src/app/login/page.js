@@ -100,9 +100,9 @@ function LoginForm() {
         </Button>
 
         <div className="relative flex items-center py-2">
-          <div className="flex-grow border-t-3 border-brutal-black"></div>
+          <div className="grow border-t-3 border-brutal-black"></div>
           <span className="shrink-0 px-4 font-bold text-sm bg-brutal-yellow border-3 border-brutal-black rounded-full mx-2 shadow-[2px_2px_0px_#000]">OR</span>
-          <div className="flex-grow border-t-3 border-brutal-black"></div>
+          <div className="grow border-t-3 border-brutal-black"></div>
         </div>
 
         <form onSubmit={handleLogin} className="space-y-4">

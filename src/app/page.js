@@ -6,6 +6,8 @@ import api from '@/lib/api';
 import { supabase } from '@/lib/supabase';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
+import { useToast } from '@/components/ui/toast';
+import { ModelSelector } from '@/components/ui/ModelSelector';
 
 export default function Home() {
   const [file, setFile] = useState(null);
@@ -14,6 +16,7 @@ export default function Home() {
   const [uploadError, setUploadError] = useState(null);
   const [session, setSession] = useState(null);
   const router = useRouter();
+  const toast = useToast();
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data: { session } }) => {
@@ -60,15 +63,49 @@ export default function Home() {
     setUploadError(null);
     const formData = new FormData();
     formData.append('resume', file);
+    formData.append('modelId', modelId);
 
     try {
+      toast.info('Uploading', 'Your resume is being submitted for AI analysis...');
       const res = await api.post('/resumes/upload', formData, {
         headers: { 'Content-Type': 'multipart/form-data' }
       });
-      router.push(`/results/${res.data.id}`);
+
+      // BUG FIX: Backend returns { jobId, status: 'PENDING' }, not { id }.
+      // Poll the job until it completes, then redirect to the new document.
+      const jobId = res.data.jobId;
+      
+      const pollJob = async () => {
+        const maxAttempts = 30; // ~90 seconds max
+        for (let i = 0; i < maxAttempts; i++) {
+          await new Promise(r => setTimeout(r, 3000));
+          const jobRes = await api.get(`/resumes/jobs/${jobId}`);
+          
+          if (jobRes.data.status === 'COMPLETED') {
+            toast.success('Analysis Complete!', 'Your resume has been analyzed successfully.');
+            const resumesRes = await api.get('/resumes');
+            if (resumesRes.data.length > 0) {
+              router.push(`/results/${resumesRes.data[0].id}`);
+            } else {
+              router.push('/dashboard');
+            }
+            return;
+          } else if (jobRes.data.status === 'FAILED') {
+            const msg = jobRes.data.errorMessage || 'AI analysis failed. Please try again.';
+            toast.error('Analysis Failed', msg);
+            setUploadError(msg);
+            return;
+          }
+        }
+        toast.warning('Timeout', 'Analysis is taking longer than expected.');
+        setUploadError('Analysis timed out. Check your dashboard later.');
+      };
+      
+      await pollJob();
     } catch (err) {
       console.error('Upload error:', err.response?.data || err.message);
       const serverMsg = err.response?.data?.error || 'Failed to analyze resume. Check backend logs.';
+      toast.error('Upload Failed', serverMsg);
       setUploadError(serverMsg);
     } finally {
       setLoading(false);
@@ -151,9 +188,12 @@ export default function Home() {
       </div>
 
       {file && (
-        <Button 
-          onClick={(e) => { e.stopPropagation(); handleUpload(); }}
-          disabled={loading}
+        <div className="mt-8 w-full max-w-xl">
+          <ModelSelector value={modelId} onChange={setModelId} />
+          <div className="flex justify-center">
+            <Button 
+              onClick={(e) => { e.stopPropagation(); handleUpload(); }}
+              disabled={loading}
           variant="default"
           size="lg"
           className={`mt-10 text-2xl py-8 px-12 border-4 ${loading ? 'opacity-50 pointer-events-none' : ''}`}
@@ -166,7 +206,9 @@ export default function Home() {
           ) : (
             'START ANALYSIS'
           )}
-        </Button>
+            </Button>
+          </div>
+        </div>
       )}
     </div>
   );

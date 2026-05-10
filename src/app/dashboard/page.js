@@ -7,11 +7,13 @@ import { useRouter } from 'next/navigation';
 import { supabase } from '@/lib/supabase';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
+import { useToast } from '@/components/ui/toast';
 
 export default function Dashboard() {
   const [resumes, setResumes] = useState([]);
   const [loading, setLoading] = useState(true);
   const router = useRouter();
+  const toast = useToast();
 
   useEffect(() => {
     const fetchResumes = async () => {
@@ -21,7 +23,7 @@ export default function Dashboard() {
       } catch (error) {
         console.error("Error fetching resumes:", error.response?.data || error.message);
         if (error.response?.status === 401) {
-           console.log("Authentication failed. Redirecting to login...");
+           toast.error('Session Expired', 'Please log in again.');
            await supabase.auth.signOut();
            router.push('/login');
         }
@@ -34,6 +36,7 @@ export default function Dashboard() {
 
   const handleLogout = async () => {
     await supabase.auth.signOut();
+    toast.success('Logged Out', 'You have been logged out successfully.');
     router.push('/login');
   };
 
@@ -45,6 +48,9 @@ export default function Dashboard() {
           <p className="text-xl font-bold mt-2 bg-brutal-yellow inline-block px-2 border-2 border-brutal-black">Manage AI analyzed resumes.</p>
         </div>
         <div className="flex items-center space-x-4">
+          <Link href="/dashboard/studio">
+             <Button variant="brutal" className="text-lg bg-brutal-blue text-white">+ Resume Studio</Button>
+          </Link>
           <Link href="/">
              <Button variant="mint" className="text-lg">+ New Analysis</Button>
           </Link>
@@ -53,6 +59,101 @@ export default function Dashboard() {
           </Button>
         </div>
       </div>
+
+      {/* CAREER TOOLS SECTION */}
+      <div className="mb-12">
+        <h2 className="text-3xl font-black mb-6 uppercase">Career Tools</h2>
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+          <Link href="/dashboard/studio" className="block">
+             <Card className="bg-brutal-blue text-white border-4 border-brutal-black hover:-translate-y-2 hover:shadow-[8px_8px_0_rgba(0,0,0,1)] transition-all cursor-pointer h-full">
+               <CardContent className="p-6">
+                  <h3 className="text-2xl font-black mb-2">Resume Studio</h3>
+                  <p className="font-bold text-sm opacity-90">Build & edit with live AI assistance.</p>
+               </CardContent>
+             </Card>
+          </Link>
+          <Link href="/dashboard/tools/tailor" className="block">
+             <Card className="bg-brutal-yellow text-black border-4 border-brutal-black hover:-translate-y-2 hover:shadow-[8px_8px_0_rgba(0,0,0,1)] transition-all cursor-pointer h-full">
+               <CardContent className="p-6">
+                  <h3 className="text-2xl font-black mb-2">AI Tailor</h3>
+                  <p className="font-bold text-sm opacity-90">Match your resume to a Job Description.</p>
+               </CardContent>
+             </Card>
+          </Link>
+          <Link href="/dashboard/tools/cover-letter" className="block">
+             <Card className="bg-brutal-pink text-black border-4 border-brutal-black hover:-translate-y-2 hover:shadow-[8px_8px_0_rgba(0,0,0,1)] transition-all cursor-pointer h-full">
+               <CardContent className="p-6">
+                  <h3 className="text-2xl font-black mb-2">Cover Letter</h3>
+                  <p className="font-bold text-sm opacity-90">Auto-generate a highly targeted letter.</p>
+               </CardContent>
+             </Card>
+          </Link>
+          <Link href="/dashboard/tools/mock-interview" className="block">
+             <Card className="bg-brutal-green text-black border-4 border-brutal-black hover:-translate-y-2 hover:shadow-[8px_8px_0_rgba(0,0,0,1)] transition-all cursor-pointer h-full">
+               <CardContent className="p-6">
+                  <h3 className="text-2xl font-black mb-2">Mock Interview</h3>
+                  <p className="font-bold text-sm opacity-90">Practice hard questions based on your CV.</p>
+               </CardContent>
+             </Card>
+          </Link>
+          
+          <Link href="/dashboard/tools/roadmap" className="block">
+             <Card className="bg-white text-black border-4 border-brutal-black hover:-translate-y-2 hover:shadow-[8px_8px_0_rgba(0,0,0,1)] transition-all cursor-pointer h-full">
+               <CardContent className="p-6">
+                  <h3 className="text-2xl font-black mb-2">Skill Roadmap</h3>
+                  <p className="font-bold text-sm opacity-90">AI generated path to your next role.</p>
+               </CardContent>
+             </Card>
+          </Link>
+
+          <Link href="/dashboard/tools/portfolio" className="block">
+             <Card className="bg-white text-black border-4 border-brutal-black hover:-translate-y-2 hover:shadow-[8px_8px_0_rgba(0,0,0,1)] transition-all cursor-pointer h-full">
+               <CardContent className="p-6">
+                  <h3 className="text-2xl font-black mb-2">Portfolio Gen</h3>
+                  <p className="font-bold text-sm opacity-90">Wireframe a site from your resume.</p>
+               </CardContent>
+             </Card>
+          </Link>
+
+          <Link href="/dashboard/tools/github" className="block">
+             <Card className="bg-black text-white border-4 border-brutal-black hover:-translate-y-2 hover:shadow-[8px_8px_0_rgba(0,0,0,1)] transition-all cursor-pointer h-full">
+               <CardContent className="p-6">
+                  <h3 className="text-2xl font-black mb-2">GitHub Analyst</h3>
+                  <p className="font-bold text-sm opacity-90">Extract your developer archetype.</p>
+               </CardContent>
+             </Card>
+          </Link>
+
+          <Link href="/dashboard/tracker" className="block">
+             <Card className="bg-brutal-bg text-black border-4 border-brutal-black hover:-translate-y-2 hover:shadow-[8px_8px_0_rgba(0,0,0,1)] transition-all cursor-pointer h-full">
+               <CardContent className="p-6">
+                  <h3 className="text-2xl font-black mb-2">Job Tracker</h3>
+                  <p className="font-bold text-sm opacity-90">Kanban board for applications.</p>
+               </CardContent>
+             </Card>
+          </Link>
+
+          <Link href="/dashboard/community" className="block">
+             <Card className="bg-brutal-yellow text-black border-4 border-brutal-black hover:-translate-y-2 hover:shadow-[8px_8px_0_rgba(0,0,0,1)] transition-all cursor-pointer h-full">
+               <CardContent className="p-6">
+                  <h3 className="text-2xl font-black mb-2">Community</h3>
+                  <p className="font-bold text-sm opacity-90">Peer review and resume roasting.</p>
+               </CardContent>
+             </Card>
+          </Link>
+
+          <Link href="/recruiter/dashboard" className="block">
+             <Card className="bg-brutal-blue text-white border-4 border-brutal-black hover:-translate-y-2 hover:shadow-[8px_8px_0_rgba(0,0,0,1)] transition-all cursor-pointer h-full">
+               <CardContent className="p-6">
+                  <h3 className="text-2xl font-black mb-2">Recruiters</h3>
+                  <p className="font-bold text-sm opacity-90">Post jobs & find AI-ranked talent.</p>
+               </CardContent>
+             </Card>
+          </Link>
+        </div>
+      </div>
+
+      <h2 className="text-3xl font-black mb-6 uppercase border-t-4 border-brutal-black pt-8">Analyzed Resumes</h2>
 
       {loading ? (
         <div className="flex justify-center items-center h-64">
@@ -70,6 +171,7 @@ export default function Dashboard() {
              </Link>
           </CardContent>
         </Card>
+
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
           {resumes.map(r => (
@@ -81,7 +183,8 @@ export default function Dashboard() {
                       <FileText className="w-8 h-8 text-brutal-black" />
                     </div>
                     <div className="pl-2">
-                       <h3 className="font-black text-xl truncate w-40" title={r.candidateName || r.originalName}>{r.candidateName || r.originalName || 'Unknown'}</h3>
+                       {/* BUG FIX: Backend returns `title`, not `candidateName` or `originalName` */}
+                       <h3 className="font-black text-xl truncate w-40" title={r.title}>{r.title || 'Untitled Resume'}</h3>
                        <p className="text-sm font-bold opacity-80">{new Date(r.createdAt).toLocaleDateString()}</p>
                     </div>
                   </div>
